@@ -1,11 +1,16 @@
---- dwm.c	2022-01-07 12:42:18.000000000 +0100
-+++ dwm.c	2022-08-17 22:14:41.813809073 +0200
-@@ -1913,7 +1923,7 @@ updategeom(void)
- 					m->clients = c->next;
- 					detachstack(c);
- 					c->mon = mons;
--					attach(c);
-+					attachbottom(c);
- 					attachstack(c);
- 				}
- 				if (m == selmon)
+--- dwm.c
++++ dwm.c
+@@ -187,10 +190,13 @@ static void maprequest(XEvent *e);
+ static void monocle(Monitor *m);
+ static void motionnotify(XEvent *e);
+ static void movemouse(const Arg *arg);
++static void moveorplace(const Arg *arg);
+ static Client *nexttiled(Client *c);
++static void placemouse(const Arg *arg);
+ static void pop(Client *);
+ static void propertynotify(XEvent *e);
+ static void quit(const Arg *arg);
++static Client *recttoclient(int x, int y, int w, int h);
+ static Monitor *recttomon(int x, int y, int w, int h);
+ static void resize(Client *c, int x, int y, int w, int h, int interact);
+ static void resizeclient(Client *c, int x, int y, int w, int h);
