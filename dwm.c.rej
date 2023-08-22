@@ -1,55 +1,27 @@
 --- dwm.c
 +++ dwm.c
-@@ -1288,7 +1295,7 @@ resizeclient(Client *c, int x, int y, int w, int h)
- 	c->oldy = c->y; c->y = wc.y = y;
- 	c->oldw = c->w; c->w = wc.width = w;
- 	c->oldh = c->h; c->h = wc.height = h;
--	wc.border_width = c->bw;
-+	c->oldbw = c->bw; c->bw = wc.border_width = bw;
- 	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
- 	configure(c);
- 	XSync(dpy, False);
-@@ -1678,13 +1683,17 @@ tagmon(const Arg *arg)
- void
- tile(Monitor *m)
+@@ -960,16 +966,17 @@ grabkeys(void)
  {
--	unsigned int i, n, h, mw, my, ty;
-+	unsigned int i, n, h, mw, my, ty, bw;
- 	Client *c;
- 
- 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
- 	if (n == 0)
- 		return;
- 
-+	if (n == 1)
-+		bw = 0;
-+	else
-+		bw = borderpx;
- 	if (n > m->nmaster)
- 		mw = m->nmaster ? m->ww * m->mfact : 0;
- 	else
-@@ -1692,11 +1701,11 @@ tile(Monitor *m)
- 	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
- 		if (i < m->nmaster) {
- 			h = (m->wh - my) / (MIN(n, m->nmaster) - i);
--			resize(c, m->wx, m->wy + my, mw - (2*c->bw), h - (2*c->bw), 0);
-+			resize(c, m->wx, m->wy + my, mw - 2*bw, h - 2*bw, bw, 0);
- 			my += HEIGHT(c);
- 		} else {
- 			h = (m->wh - ty) / (n - i);
--			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
-+			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - 2*bw, h - 2*bw, bw, 0);
- 			ty += HEIGHT(c);
- 		}
- }
-@@ -1720,7 +1729,9 @@ togglefloating(const Arg *arg)
- 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
- 	if (selmon->sel->isfloating)
- 		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
--			selmon->sel->w, selmon->sel->h, 0);
-+			selmon->sel->w - 2 * (borderpx - selmon->sel->bw),
-+			selmon->sel->h - 2 * (borderpx - selmon->sel->bw),
-+			borderpx, 0);
- 	arrange(selmon);
+ 	updatenumlockmask();
+ 	{
+-		unsigned int i, j;
++		unsigned int i, k;
+ 		unsigned int modifiers[] = { 0, LockMask, numlockmask, numlockmask|LockMask };
+ 		KeyCode code;
+-
+ 		XUngrabKey(dpy, AnyKey, AnyModifier, root);
+-		for (i = 0; i < LENGTH(keys); i++)
+-			if ((code = XKeysymToKeycode(dpy, keys[i].keysym)))
+-				for (j = 0; j < LENGTH(modifiers); j++)
+-					XGrabKey(dpy, code, keys[i].mod | modifiers[j], root,
+-						True, GrabModeAsync, GrabModeAsync);
++		for (i = 0; i < LENGTH(keychords); i++)
++			if ((code = XKeysymToKeycode(dpy, keychords[i]->keys[currentkey].keysym)))
++				for (k = 0; k < LENGTH(modifiers); k++)
++					XGrabKey(dpy, code, keychords[i]->keys[currentkey].mod | modifiers[k], root,
++							 True, GrabModeAsync, GrabModeAsync);
++		if(currentkey > 0)
++			XGrabKey(dpy, XKeysymToKeycode(dpy, XK_Escape), AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
+ 	}
  }
  
