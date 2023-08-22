@@ -166,26 +166,24 @@ void
 getfacts(Monitor *m, int msize, int ssize, float *mf, float *sf, int *mr, int *sr)
 {
 	unsigned int n;
-	float mfacts = 0, sfacts = 0;
+	float mfacts, sfacts;
 	int mtotal = 0, stotal = 0;
 	Client *c;
 
-	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++)
-		if (n < m->nmaster)
-			mfacts += c->cfact;
-		else
-			sfacts += c->cfact;
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+	mfacts = MIN(n, m->nmaster);
+	sfacts = n - m->nmaster;
 
 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++)
 		if (n < m->nmaster)
-			mtotal += msize * (c->cfact / mfacts);
+			mtotal += msize / mfacts;
 		else
-			stotal += ssize * (c->cfact / sfacts);
+			stotal += ssize / sfacts;
 
 	*mf = mfacts; // total factor of master area
 	*sf = sfacts; // total factor of stack area
-	*mr = msize - mtotal; // the remainder (rest) of pixels after a cfacts master split
-	*sr = ssize - stotal; // the remainder (rest) of pixels after a cfacts stack split
+	*mr = msize - mtotal; // the remainder (rest) of pixels after an even master split
+	*sr = ssize - stotal; // the remainder (rest) of pixels after an even stack split
 }
 
 /***
@@ -199,7 +197,7 @@ getfacts(Monitor *m, int msize, int ssize, float *mf, float *sf, int *mr, int *s
 static void
 bstack(Monitor *m)
 {
-	unsigned int i, n;
+	unsigned int i, n, bw;
 	int oh, ov, ih, iv;
 	int mx = 0, my = 0, mh = 0, mw = 0;
 	int sx = 0, sy = 0, sh = 0, sw = 0;
@@ -210,6 +208,11 @@ bstack(Monitor *m)
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 	if (n == 0)
 		return;
+
+	if (n == 1)
+		bw = 0;
+	else
+		bw = borderpx;
 
 	sx = mx = m->wx + ov;
 	sy = my = m->wy + oh;
@@ -228,10 +231,10 @@ bstack(Monitor *m)
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
 		if (i < m->nmaster) {
-			resize(c, mx, my, mw * (c->cfact / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), mh - (2*c->bw), 0);
+			resize(c, mx, my, (mw / mfacts) + (i < mrest ? 1 : 0) - 2*bw, mh - 2*bw, bw, 0);
 			mx += WIDTH(c) + iv;
 		} else {
-			resize(c, sx, sy, sw * (c->cfact / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - (2*c->bw), sh - (2*c->bw), 0);
+			resize(c, sx, sy, (sw / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - 2*bw, sh - 2*bw, bw, 0);
 			sx += WIDTH(c) + iv;
 		}
 	}
@@ -240,7 +243,7 @@ bstack(Monitor *m)
 static void
 bstackhoriz(Monitor *m)
 {
-	unsigned int i, n;
+	unsigned int i, n, bw;
 	int oh, ov, ih, iv;
 	int mx = 0, my = 0, mh = 0, mw = 0;
 	int sx = 0, sy = 0, sh = 0, sw = 0;
@@ -251,6 +254,11 @@ bstackhoriz(Monitor *m)
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 	if (n == 0)
 		return;
+
+	if (n == 1)
+		bw = 0;
+	else
+		bw = borderpx;
 
 	sx = mx = m->wx + ov;
 	sy = my = m->wy + oh;
@@ -270,10 +278,10 @@ bstackhoriz(Monitor *m)
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
 		if (i < m->nmaster) {
-			resize(c, mx, my, mw * (c->cfact / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), mh - (2*c->bw), 0);
+			resize(c, mx, my, (mw / mfacts) + (i < mrest ? 1 : 0) - 2*bw, mh - 2*bw, bw, 0);
 			mx += WIDTH(c) + iv;
 		} else {
-			resize(c, sx, sy, sw - (2*c->bw), sh * (c->cfact / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - (2*c->bw), 0);
+			resize(c, sx, sy, sw - 2*bw, (sh / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - 2*bw, bw, 0);
 			sy += HEIGHT(c) + ih;
 		}
 	}
@@ -286,7 +294,7 @@ bstackhoriz(Monitor *m)
 void
 centeredmaster(Monitor *m)
 {
-	unsigned int i, n;
+	unsigned int i, n, bw;
 	int oh, ov, ih, iv;
 	int mx = 0, my = 0, mh = 0, mw = 0;
 	int lx = 0, ly = 0, lw = 0, lh = 0;
@@ -299,6 +307,11 @@ centeredmaster(Monitor *m)
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 	if (n == 0)
 		return;
+
+	if (n == 1)
+		bw = 0;
+	else
+		bw = borderpx;
 
 	/* initialize areas */
 	mx = m->wx + ov;
@@ -331,20 +344,20 @@ centeredmaster(Monitor *m)
 	/* calculate facts */
 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++) {
 		if (!m->nmaster || n < m->nmaster)
-			mfacts += c->cfact;
+			mfacts += 1;
 		else if ((n - m->nmaster) % 2)
-			lfacts += c->cfact; // total factor of left hand stack area
+			lfacts += 1; // total factor of left hand stack area
 		else
-			rfacts += c->cfact; // total factor of right hand stack area
+			rfacts += 1; // total factor of right hand stack area
 	}
 
 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++)
 		if (!m->nmaster || n < m->nmaster)
-			mtotal += mh * (c->cfact / mfacts);
+			mtotal += mh / mfacts;
 		else if ((n - m->nmaster) % 2)
-			ltotal += lh * (c->cfact / lfacts);
+			ltotal += lh / lfacts;
 		else
-			rtotal += rh * (c->cfact / rfacts);
+			rtotal += rh / rfacts;
 
 	mrest = mh - mtotal;
 	lrest = lh - ltotal;
@@ -353,15 +366,15 @@ centeredmaster(Monitor *m)
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
 		if (!m->nmaster || i < m->nmaster) {
 			/* nmaster clients are stacked vertically, in the center of the screen */
-			resize(c, mx, my, mw - (2*c->bw), mh * (c->cfact / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), 0);
+			resize(c, mx, my, mw - 2*bw, (mh / mfacts) + (i < mrest ? 1 : 0) - 2*bw, bw, 0);
 			my += HEIGHT(c) + ih;
 		} else {
 			/* stack clients are stacked vertically */
 			if ((i - m->nmaster) % 2 ) {
-				resize(c, lx, ly, lw - (2*c->bw), lh * (c->cfact / lfacts) + ((i - 2*m->nmaster) < 2*lrest ? 1 : 0) - (2*c->bw), 0);
+				resize(c, lx, ly, lw - 2*bw, (lh / lfacts) + ((i - 2*m->nmaster) < 2*lrest ? 1 : 0) - 2*bw, bw, 0);
 				ly += HEIGHT(c) + ih;
 			} else {
-				resize(c, rx, ry, rw - (2*c->bw), rh * (c->cfact / rfacts) + ((i - 2*m->nmaster) < 2*rrest ? 1 : 0) - (2*c->bw), 0);
+				resize(c, rx, ry, rw - 2*bw, (rh / rfacts) + ((i - 2*m->nmaster) < 2*rrest ? 1 : 0) - 2*bw, bw, 0);
 				ry += HEIGHT(c) + ih;
 			}
 		}
@@ -371,7 +384,7 @@ centeredmaster(Monitor *m)
 void
 centeredfloatingmaster(Monitor *m)
 {
-	unsigned int i, n;
+	unsigned int i, n, bw;
 	float mfacts, sfacts;
 	float mivf = 1.0; // master inner vertical gap factor
 	int oh, ov, ih, iv, mrest, srest;
@@ -382,6 +395,11 @@ centeredfloatingmaster(Monitor *m)
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 	if (n == 0)
 		return;
+
+	if (n == 1)
+		bw = 0;
+	else
+		bw = borderpx;
 
 	sx = mx = m->wx + ov;
 	sy = my = m->wy + oh;
@@ -412,11 +430,11 @@ centeredfloatingmaster(Monitor *m)
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
 			/* nmaster clients are stacked horizontally, in the center of the screen */
-			resize(c, mx, my, mw * (c->cfact / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), mh - (2*c->bw), 0);
+			resize(c, mx, my, (mw / mfacts) + (i < mrest ? 1 : 0) - 2*bw, mh - 2*bw, bw, 0);
 			mx += WIDTH(c) + iv*mivf;
 		} else {
 			/* stack clients are stacked horizontally */
-			resize(c, sx, sy, sw * (c->cfact / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - (2*c->bw), sh - (2*c->bw), 0);
+			resize(c, sx, sy, (sw / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - 2*bw, sh - 2*bw, bw, 0);
 			sx += WIDTH(c) + iv;
 		}
 }
@@ -428,7 +446,7 @@ centeredfloatingmaster(Monitor *m)
 void
 deck(Monitor *m)
 {
-	unsigned int i, n;
+	unsigned int i, n, bw;
 	int oh, ov, ih, iv;
 	int mx = 0, my = 0, mh = 0, mw = 0;
 	int sx = 0, sy = 0, sh = 0, sw = 0;
@@ -439,6 +457,11 @@ deck(Monitor *m)
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 	if (n == 0)
 		return;
+
+	if (n == 1)
+		bw = 0;
+	else
+		bw = borderpx;
 
 	sx = mx = m->wx + ov;
 	sy = my = m->wy + oh;
@@ -459,10 +482,10 @@ deck(Monitor *m)
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
-			resize(c, mx, my, mw - (2*c->bw), mh * (c->cfact / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), 0);
+			resize(c, mx, my, mw - 2*bw, (mh / mfacts) + (i < mrest ? 1 : 0) - 2*bw, bw, 0);
 			my += HEIGHT(c) + ih;
 		} else {
-			resize(c, sx, sy, sw - (2*c->bw), sh - (2*c->bw), 0);
+			resize(c, sx, sy, sw - 2*bw, sh - 2*bw, bw, 0);
 		}
 }
 
@@ -473,7 +496,7 @@ deck(Monitor *m)
 void
 fibonacci(Monitor *m, int s)
 {
-	unsigned int i, n;
+	unsigned int i, n, bw;
 	int nx, ny, nw, nh;
 	int oh, ov, ih, iv;
 	int nv, hrest = 0, wrest = 0, r = 1;
@@ -482,6 +505,11 @@ fibonacci(Monitor *m, int s)
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 	if (n == 0)
 		return;
+
+	if (n == 1)
+		bw = 0;
+	else
+		bw = borderpx;
 
 	nx = m->wx + ov;
 	ny = m->wy + oh;
@@ -553,7 +581,7 @@ fibonacci(Monitor *m, int s)
 			i++;
 		}
 
-		resize(c, nx, ny, nw - (2*c->bw), nh - (2*c->bw), False);
+		resize(c, nx, ny, nw - 2*bw, nh - 2*bw, bw, False);
 	}
 }
 
@@ -576,7 +604,7 @@ spiral(Monitor *m)
 void
 gaplessgrid(Monitor *m)
 {
-	unsigned int i, n;
+	unsigned int i, n, bw;
 	int x, y, cols, rows, ch, cw, cn, rn, rrest, crest; // counters
 	int oh, ov, ih, iv;
 	Client *c;
@@ -584,6 +612,11 @@ gaplessgrid(Monitor *m)
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 	if (n == 0)
 		return;
+
+	if (n == 1)
+		bw = 0;
+	else
+		bw = borderpx;
 
 	/* grid dimensions */
 	for (cols = 0; cols <= n/2; cols++)
@@ -610,8 +643,9 @@ gaplessgrid(Monitor *m)
 		resize(c,
 			x,
 			y + rn*(ch + ih) + MIN(rn, rrest),
-			cw + (cn < crest ? 1 : 0) - 2*c->bw,
-			ch + (rn < rrest ? 1 : 0) - 2*c->bw,
+			cw + (cn < crest ? 1 : 0) - 2*bw,
+			ch + (rn < rrest ? 1 : 0) - 2*bw,
+			bw,
 			0);
 		rn++;
 		if (rn >= rows) {
@@ -629,13 +663,18 @@ gaplessgrid(Monitor *m)
 void
 grid(Monitor *m)
 {
-	unsigned int i, n;
+	unsigned int i, n, bw;
 	int cx, cy, cw, ch, cc, cr, chrest, cwrest, cols, rows;
 	int oh, ov, ih, iv;
 	Client *c;
 
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 
+	if (n == 1)
+		bw = 0;
+	else
+		bw = borderpx;
+	
 	/* grid dimensions */
 	for (rows = 0; rows <= n/2; rows++)
 		if (rows*rows >= n)
@@ -652,7 +691,7 @@ grid(Monitor *m)
 		cr = i % rows;
 		cx = m->wx + ov + cc * (cw + iv) + MIN(cc, cwrest);
 		cy = m->wy + oh + cr * (ch + ih) + MIN(cr, chrest);
-		resize(c, cx, cy, cw + (cc < cwrest ? 1 : 0) - 2*c->bw, ch + (cr < chrest ? 1 : 0) - 2*c->bw, False);
+		resize(c, cx, cy, cw + (cc < cwrest ? 1 : 0) - 2*bw, ch + (cr < chrest ? 1 : 0) - 2*bw, bw, False);
 	}
 }
 
@@ -663,18 +702,23 @@ grid(Monitor *m)
 void
 horizgrid(Monitor *m) {
 	Client *c;
-	unsigned int n, i;
+	unsigned int n, i, bw;
 	int oh, ov, ih, iv;
 	int mx = 0, my = 0, mh = 0, mw = 0;
 	int sx = 0, sy = 0, sh = 0, sw = 0;
 	int ntop, nbottom = 1;
-	float mfacts = 0, sfacts = 0;
-	int mrest, srest, mtotal = 0, stotal = 0;
+	float mfacts, sfacts;
+	int mrest, srest;
 
 	/* Count windows */
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 	if (n == 0)
 		return;
+
+	if (n == 1)
+		bw = 0;
+	else
+		bw = borderpx;
 
 	if (n <= 2)
 		ntop = n;
@@ -695,28 +739,17 @@ horizgrid(Monitor *m) {
 		sw = m->ww - 2*ov - iv * (nbottom - 1);
 	}
 
-	/* calculate facts */
-	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
-		if (i < ntop)
-			mfacts += c->cfact;
-		else
-			sfacts += c->cfact;
-
-	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
-		if (i < ntop)
-			mtotal += mh * (c->cfact / mfacts);
-		else
-			stotal += sw * (c->cfact / sfacts);
-
-	mrest = mh - mtotal;
-	srest = sw - stotal;
+	mfacts = ntop;
+	sfacts = nbottom;
+	mrest = mw - (mw / ntop) * ntop;
+	srest = sw - (sw / nbottom) * nbottom;
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < ntop) {
-			resize(c, mx, my, mw * (c->cfact / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), mh - (2*c->bw), 0);
+			resize(c, mx, my, (mw / mfacts) + (i < mrest ? 1 : 0) - 2*bw, mh - 2*bw, bw, 0);
 			mx += WIDTH(c) + iv;
 		} else {
-			resize(c, sx, sy, sw * (c->cfact / sfacts) + ((i - ntop) < srest ? 1 : 0) - (2*c->bw), sh - (2*c->bw), 0);
+			resize(c, sx, sy, (sw / sfacts) + ((i - ntop) < srest ? 1 : 0) - 2*bw, sh - 2*bw, bw, 0);
 			sx += WIDTH(c) + iv;
 		}
 }
@@ -728,7 +761,7 @@ horizgrid(Monitor *m) {
 void
 nrowgrid(Monitor *m)
 {
-	unsigned int n;
+	unsigned int n, bw;
 	int ri = 0, ci = 0;  /* counters */
 	int oh, ov, ih, iv;                         /* vanitygap settings */
 	unsigned int cx, cy, cw, ch;                /* client geometry */
@@ -742,6 +775,11 @@ nrowgrid(Monitor *m)
 	/* nothing to do here */
 	if (n == 0)
 		return;
+
+	if (n == 1)
+		bw = 0;
+	else
+		bw = borderpx;
 
 	/* force 2 clients to always split vertically */
 	if (FORCE_VSPLIT && n == 2)
@@ -775,7 +813,7 @@ nrowgrid(Monitor *m)
 		cw = (m->ww - 2*ov - uw) / (cols - ci);
 		uw += cw + iv;
 
-		resize(c, cx, cy, cw - (2*c->bw), ch - (2*c->bw), 0);
+		resize(c, cx, cy, cw - 2*bw, ch - 2*bw, bw, 0);
 	}
 }
 
@@ -785,7 +823,7 @@ nrowgrid(Monitor *m)
 static void
 tile(Monitor *m)
 {
-	unsigned int i, n;
+	unsigned int i, n, bw;
 	int oh, ov, ih, iv;
 	int mx = 0, my = 0, mh = 0, mw = 0;
 	int sx = 0, sy = 0, sh = 0, sw = 0;
@@ -796,6 +834,11 @@ tile(Monitor *m)
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 	if (n == 0)
 		return;
+
+	if (n == 1)
+		bw = 0;
+	else
+		bw = borderpx;
 
 	sx = mx = m->wx + ov;
 	sy = my = m->wy + oh;
@@ -813,10 +856,10 @@ tile(Monitor *m)
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
-			resize(c, mx, my, mw - (2*c->bw), mh * (c->cfact / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), 0);
+			resize(c, mx, my, mw - 2*bw, (mh / mfacts) + (i < mrest ? 1 : 0) - 2*bw, bw, 0);
 			my += HEIGHT(c) + ih;
 		} else {
-			resize(c, sx, sy, sw - (2*c->bw), sh * (c->cfact / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - (2*c->bw), 0);
+			resize(c, sx, sy, sw - 2*bw, (sh / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - 2*bw, bw, 0);
 			sy += HEIGHT(c) + ih;
 		}
 }
