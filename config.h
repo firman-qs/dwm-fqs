@@ -3,17 +3,17 @@
 #define SESSION_FILE "/tmp/dwm-session"
 
 /* appearance */
-static const unsigned int borderpx  = 1;        /* border pixel of windows */
-static const unsigned int snap      = 32;       /* snap pixel */
-static const unsigned int gappih    = 20;       /* horiz inner gap between windows */
-static const unsigned int gappiv    = 10;       /* vert inner gap between windows */
-static const unsigned int gappoh    = 10;       /* horiz outer gap between windows and screen edge */
-static const unsigned int gappov    = 30;       /* vert outer gap between windows and screen edge */
+static const unsigned int borderpx  = 2;        /* border pixel of windows */
+static const unsigned int snap      = 16;       /* snap pixel */
+static const unsigned int gappih    = 8;       /* horiz inner gap between windows */
+static const unsigned int gappiv    = 8;       /* vert inner gap between windows */
+static const unsigned int gappoh    = 8;       /* horiz outer gap between windows and screen edge */
+static const unsigned int gappov    = 8;       /* vert outer gap between windows and screen edge */
 static       int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
-static const char *fonts[]          = { "monospace:size=10" };
-static const char dmenufont[]       = "monospace:size=10";
+static const char *fonts[]          = { "JetBrainsMono Nerd Font:size=10","JoyPixels:pixelsize=10:antialias=true:autohint=true", "FontAwesome:size:10" };
+static const char dmenufont[]       = "JetBrainsMono Nerd Font:size=10";
 static char normbgcolor[]           = "#222222";
 static char normbordercolor[]       = "#444444";
 static char normfgcolor[]           = "#bbbbbb";
@@ -30,18 +30,19 @@ typedef struct {
 	const char *name;
 	const void *cmd;
 } Sp;
-const char *spcmd1[] = {"st", "-n", "spterm", "-g", "120x34", NULL };
-const char *spcmd2[] = {"st", "-n", "spfm", "-g", "144x41", "-e", "ranger", NULL };
-const char *spcmd3[] = {"keepassxc", NULL };
+const char *spcmd1[] = {"alacritty", "-n", "spterm", "-g", "90x25", NULL };
+const char *spcmd2[] = {"alacritty", "-n", "spfm", "-g", "90x25", "-e", "ranger", NULL };
+const char *spcmd3[] = {"alacritty", "-n", "spfm", "-g", "90x25", "-e", "htop", NULL };
 static Sp scratchpads[] = {
-	/* name          cmd  */
-	{"spterm",      spcmd1},
-	{"spranger",    spcmd2},
-	{"keepassxc",   spcmd3},
+	/* name			cmd  */
+	{"spterm",		spcmd1},
+	{"spranger",	spcmd2},
+	{"sphtop",		spcmd3},
 };
 
 /* tagging */
-static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
+// static const char *tags[] = {"", "", "", "󰈙", "", "", "", "", "", "󱞁" };
 static const Rule rules[] = {
 	/* xprop(1):
 	 *	WM_CLASS(STRING) = instance, class
@@ -58,7 +59,7 @@ static const Rule rules[] = {
 /* layout(s) */
 static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
 static const int nmaster     = 1;    /* number of clients in master area */
-static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
+static const int resizehints = 0;    /* 1 means respect size hints in tiled resizals */
 static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen window */
 
 #define FORCE_VSPLIT 1  /* nrowgrid layout: force two clients to always split vertically */
@@ -86,11 +87,11 @@ static const Layout layouts[] = {
 /* key definitions */
 #define MODKEY Mod4Mask
 #define ALTKEY Mod1Mask
-#define TAGKEYS(KEY,TAG)												\
-	&((Keychord){1, {{MODKEY, KEY}},								view,           {.ui = 1 << TAG} }), \
-		&((Keychord){1, {{MODKEY|ControlMask, KEY}},					toggleview,     {.ui = 1 << TAG} }), \
-		&((Keychord){1, {{MODKEY|ShiftMask, KEY}},						tag,            {.ui = 1 << TAG} }), \
-		&((Keychord){1, {{MODKEY|ControlMask|ShiftMask, KEY}},			toggletag,      {.ui = 1 << TAG} }),
+#define TAGKEYS(KEY,TAG) \
+	&((Keychord){1, { {MODKEY,				KEY} },	view,		{.ui = 1 << TAG} }), \
+	&((Keychord){1, { {MODKEY|ControlMask,	KEY} },	toggleview,	{.ui = 1 << TAG} }), \
+	&((Keychord){1, { {MODKEY|ShiftMask,	KEY} },	tag,		{.ui = 1 << TAG} }), \
+	&((Keychord){1, { {MODKEY|ALTKEY,		KEY} },	toggletag,	{.ui = 1 << TAG} }),
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
@@ -99,8 +100,9 @@ static const Layout layouts[] = {
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbordercolor, "-sf", selfgcolor, NULL };
-static const char *termcmd[]  = { "st", NULL };
+// static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbordercolor, "-sf", selfgcolor, NULL };
+static const char *dmenucmd[] = {"dm_run.py", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbordercolor, "-sf", selfgcolor, NULL };
+static const char *termcmd[]  = { "alacritty", NULL };
 
 static Keychord *keychords[] = {
 	/*-------------------------------------------------------------------------------------------------------------*/
