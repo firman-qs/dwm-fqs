@@ -1,11 +1,13 @@
 --- dwm.c
 +++ dwm.c
-@@ -205,6 +205,8 @@ static void setup(void);
- static void seturgent(Client *c, int urg);
- static void showhide(Client *c);
- static void sigchld(int unused);
-+static void sighup(int unused);
-+static void sigterm(int unused);
- static void spawn(const Arg *arg);
- static void tag(const Arg *arg);
- static void tagmon(const Arg *arg);
+@@ -1057,6 +1058,10 @@ manage(Window w, XWindowAttributes *wa)
+ 	updatewindowtype(c);
+ 	updatesizehints(c);
+ 	updatewmhints(c);
++	c->sfx = c->x;
++	c->sfy = c->y;
++	c->sfw = c->w;
++	c->sfh = c->h;
+ 	XSelectInput(dpy, w, EnterWindowMask|FocusChangeMask|PropertyChangeMask|StructureNotifyMask);
+ 	grabbuttons(c, 0);
+ 	if (!c->isfloating)
