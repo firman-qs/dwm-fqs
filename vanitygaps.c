@@ -1,4 +1,4 @@
-/* Key binding functions */
+// Key binding functions
 static void defaultgaps(const Arg *arg);
 static void incrgaps(const Arg *arg);
 static void incrigaps(const Arg *arg);
@@ -8,7 +8,7 @@ static void incrovgaps(const Arg *arg);
 static void incrihgaps(const Arg *arg);
 static void incrivgaps(const Arg *arg);
 static void togglegaps(const Arg *arg);
-/* Layouts (delete the ones you do not need) */
+// Layouts (delete the ones you do not need)
 static void bstack(Monitor *m);
 static void bstackhoriz(Monitor *m);
 static void centeredmaster(Monitor *m);
@@ -20,12 +20,12 @@ static void grid(Monitor *m);
 static void nrowgrid(Monitor *m);
 static void spiral(Monitor *m);
 static void tile(Monitor *m);
-/* Internals */
+// Internals
 static void getgaps(Monitor *m, int *oh, int *ov, int *ih, int *iv, unsigned int *nc);
 static void getfacts(Monitor *m, int msize, int ssize, float *mf, float *sf, int *mr, int *sr);
 static void setgaps(int oh, int ov, int ih, int iv);
 
-/* Settings */
+// Settings
 #if !PERTAG_PATCH
 static int enablegaps = 1;
 #endif // PERTAG_PATCH
@@ -186,14 +186,10 @@ getfacts(Monitor *m, int msize, int ssize, float *mf, float *sf, int *mr, int *s
 	*sr = ssize - stotal; // the remainder (rest) of pixels after an even stack split
 }
 
-/***
- * Layouts
- */
+// LAYOUT
 
-/*
- * Bottomstack layout + gaps
- * https://dwm.suckless.org/patches/bottomstack/
- */
+// Bottomstack layout + gaps
+// https://dwm.suckless.org/patches/bottomstack/
 static void
 bstack(Monitor *m)
 {
@@ -287,10 +283,8 @@ bstackhoriz(Monitor *m)
 	}
 }
 
-/*
- * Centred master layout + gaps
- * https://dwm.suckless.org/patches/centeredmaster/
- */
+// Centred master layout + gaps
+// https://dwm.suckless.org/patches/centeredmaster/
 void
 centeredmaster(Monitor *m)
 {
@@ -313,7 +307,7 @@ centeredmaster(Monitor *m)
 	else
 		bw = borderpx;
 
-	/* initialize areas */
+	// initialize areas
 	mx = m->wx + ov;
 	my = m->wy + oh;
 	mh = m->wh - 2*oh - ih * ((!m->nmaster ? n : MIN(n, m->nmaster)) - 1);
@@ -322,15 +316,15 @@ centeredmaster(Monitor *m)
 	rh = m->wh - 2*oh - ih * (((n - m->nmaster) / 2) - ((n - m->nmaster) % 2 ? 0 : 1));
 
 	if (m->nmaster && n > m->nmaster) {
-		/* go mfact box in the center if more than nmaster clients */
+		// go mfact box in the center if more than nmaster clients
 		if (n - m->nmaster > 1) {
-			/* ||<-S->|<---M--->|<-S->|| */
+			// ||<-S->|<---M--->|<-S->||
 			mw = (m->ww - 2*ov - 2*iv) * m->mfact;
 			lw = (m->ww - mw - 2*ov - 2*iv) / 2;
 			rw = (m->ww - mw - 2*ov - 2*iv) - lw;
 			mx += lw + iv;
 		} else {
-			/* ||<---M--->|<-S->|| */
+			// ||<---M--->|<-S->||
 			mw = (mw - iv) * m->mfact;
 			lw = 0;
 			rw = m->ww - mw - iv - 2*ov;
@@ -341,7 +335,7 @@ centeredmaster(Monitor *m)
 		ry = m->wy + oh;
 	}
 
-	/* calculate facts */
+	// calculate facts
 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++) {
 		if (!m->nmaster || n < m->nmaster)
 			mfacts += 1;
@@ -365,11 +359,11 @@ centeredmaster(Monitor *m)
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
 		if (!m->nmaster || i < m->nmaster) {
-			/* nmaster clients are stacked vertically, in the center of the screen */
+			// nmaster clients are stacked vertically, in the center of the screen
 			resize(c, mx, my, mw - 2*bw, (mh / mfacts) + (i < mrest ? 1 : 0) - 2*bw, bw, 0);
 			my += HEIGHT(c) + ih;
 		} else {
-			/* stack clients are stacked vertically */
+			// stack clients are stacked vertically
 			if ((i - m->nmaster) % 2 ) {
 				resize(c, lx, ly, lw - 2*bw, (lh / lfacts) + ((i - 2*m->nmaster) < 2*lrest ? 1 : 0) - 2*bw, bw, 0);
 				ly += HEIGHT(c) + ih;
@@ -409,7 +403,7 @@ centeredfloatingmaster(Monitor *m)
 
 	if (m->nmaster && n > m->nmaster) {
 		mivf = 0.8;
-		/* go mfact box in the center if more than nmaster clients */
+		// go mfact box in the center if more than nmaster clients
 		if (m->ww > m->wh) {
 			mw = m->ww * m->mfact - iv*mivf*(MIN(n, m->nmaster) - 1);
 			mh = m->wh * 0.9;
@@ -429,20 +423,18 @@ centeredfloatingmaster(Monitor *m)
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
-			/* nmaster clients are stacked horizontally, in the center of the screen */
+			// nmaster clients are stacked horizontally, in the center of the screen
 			resize(c, mx, my, (mw / mfacts) + (i < mrest ? 1 : 0) - 2*bw, mh - 2*bw, bw, 0);
 			mx += WIDTH(c) + iv*mivf;
 		} else {
-			/* stack clients are stacked horizontally */
+			// stack clients are stacked horizontally
 			resize(c, sx, sy, (sw / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - 2*bw, sh - 2*bw, bw, 0);
 			sx += WIDTH(c) + iv;
 		}
 }
 
-/*
- * Deck layout + gaps
- * https://dwm.suckless.org/patches/deck/
- */
+// Deck layout + gaps
+// https://dwm.suckless.org/patches/deck/
 void
 deck(Monitor *m)
 {
@@ -477,7 +469,7 @@ deck(Monitor *m)
 
 	getfacts(m, mh, sh, &mfacts, &sfacts, &mrest, &srest);
 
-	if (n - m->nmaster > 0) /* override layout symbol */
+	if (n - m->nmaster > 0) // override layout symbol
 		snprintf(m->ltsymbol, sizeof m->ltsymbol, "D %d", n - m->nmaster);
 
 	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
@@ -489,10 +481,8 @@ deck(Monitor *m)
 		}
 }
 
-/*
- * Fibonacci layout + gaps
- * https://dwm.suckless.org/patches/fibonacci/
- */
+// Fibonacci layout + gaps
+// https://dwm.suckless.org/patches/fibonacci/
 void
 fibonacci(Monitor *m, int s)
 {
@@ -597,10 +587,8 @@ spiral(Monitor *m)
 	fibonacci(m, 0);
 }
 
-/*
- * Gappless grid layout + gaps (ironically)
- * https://dwm.suckless.org/patches/gaplessgrid/
- */
+// Gappless grid layout + gaps (ironically)
+// https://dwm.suckless.org/patches/gaplessgrid/
 void
 gaplessgrid(Monitor *m)
 {
@@ -618,11 +606,11 @@ gaplessgrid(Monitor *m)
 	else
 		bw = borderpx;
 
-	/* grid dimensions */
+	// grid dimensions
 	for (cols = 0; cols <= n/2; cols++)
 		if (cols*cols >= n)
 			break;
-	if (n == 5) /* set layout against the general calculation: not 1:2:2, but 2:3 */
+	if (n == 5) // set layout against the general calculation: not 1:2:2, but 2:3
 		cols = 2;
 	rows = n/cols;
 	cn = rn = 0; // reset column no, row no, client count
@@ -656,10 +644,8 @@ gaplessgrid(Monitor *m)
 	}
 }
 
-/*
- * Gridmode layout + gaps
- * https://dwm.suckless.org/patches/gridmode/
- */
+// Gridmode layout + gaps
+// https://dwm.suckless.org/patches/gridmode/
 void
 grid(Monitor *m)
 {
@@ -675,13 +661,13 @@ grid(Monitor *m)
 	else
 		bw = borderpx;
 	
-	/* grid dimensions */
+	// grid dimensions
 	for (rows = 0; rows <= n/2; rows++)
 		if (rows*rows >= n)
 			break;
 	cols = (rows && (rows - 1) * rows >= n) ? rows - 1 : rows;
 
-	/* window geoms (cell height/width) */
+	// window geoms (cell height/width)
 	ch = (m->wh - 2*oh - ih * (rows - 1)) / (rows ? rows : 1);
 	cw = (m->ww - 2*ov - iv * (cols - 1)) / (cols ? cols : 1);
 	chrest = (m->wh - 2*oh - ih * (rows - 1)) - ch * rows;
@@ -695,10 +681,8 @@ grid(Monitor *m)
 	}
 }
 
-/*
- * Horizontal grid layout + gaps
- * https://dwm.suckless.org/patches/horizgrid/
- */
+// Horizontal grid layout + gaps
+// https://dwm.suckless.org/patches/horizgrid/
 void
 horizgrid(Monitor *m) {
 	Client *c;
@@ -710,7 +694,7 @@ horizgrid(Monitor *m) {
 	float mfacts, sfacts;
 	int mrest, srest;
 
-	/* Count windows */
+	// Count windows
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 	if (n == 0)
 		return;
@@ -754,25 +738,23 @@ horizgrid(Monitor *m) {
 		}
 }
 
-/*
- * nrowgrid layout + gaps
- * https://dwm.suckless.org/patches/nrowgrid/
- */
+// nrowgrid layout + gaps
+// https://dwm.suckless.org/patches/nrowgrid/
 void
 nrowgrid(Monitor *m)
 {
 	unsigned int n, bw;
-	int ri = 0, ci = 0;  /* counters */
-	int oh, ov, ih, iv;                         /* vanitygap settings */
-	unsigned int cx, cy, cw, ch;                /* client geometry */
-	unsigned int uw = 0, uh = 0, uc = 0;        /* utilization trackers */
+	int ri = 0, ci = 0;  // counters
+	int oh, ov, ih, iv;                     // vanitygap settings
+	unsigned int cx, cy, cw, ch;            // client geometry
+	unsigned int uw = 0, uh = 0, uc = 0;    // utilization trackers
 	unsigned int cols, rows = m->nmaster + 1;
 	Client *c;
 
-	/* count clients */
+	// count clients
 	getgaps(m, &oh, &ov, &ih, &iv, &n);
 
-	/* nothing to do here */
+	// nothing to do here
 	if (n == 0)
 		return;
 
@@ -781,15 +763,15 @@ nrowgrid(Monitor *m)
 	else
 		bw = borderpx;
 
-	/* force 2 clients to always split vertically */
+	// force 2 clients to always split vertically
 	if (FORCE_VSPLIT && n == 2)
 		rows = 1;
 
-	/* never allow empty rows */
+	// never allow empty rows
 	if (n < rows)
 		rows = n;
 
-	/* define first row */
+	// define first row
 	cols = n / rows;
 	uc = cols;
 	cy = m->wy + oh;
@@ -802,7 +784,7 @@ nrowgrid(Monitor *m)
 			ci = 0;
 			ri++;
 
-			/* next row */
+			// next row
 			cols = (n - uc) / (rows - ri);
 			uc += cols;
 			cy = m->wy + oh + uh + ih;
@@ -817,9 +799,7 @@ nrowgrid(Monitor *m)
 	}
 }
 
-/*
- * Default tile layout + gaps
- */
+// Default tile layout + gaps
 static void
 tile(Monitor *m)
 {
