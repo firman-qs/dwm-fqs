@@ -9,21 +9,45 @@ static const unsigned int gappih    = 8;       /* horiz inner gap between window
 static const unsigned int gappiv    = 8;       /* vert inner gap between windows */
 static const unsigned int gappoh    = 8;       /* horiz outer gap between windows and screen edge */
 static const unsigned int gappov    = 8;       /* vert outer gap between windows and screen edge */
-static       int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
+static       int smartgaps          = 1;        /* 1 means no outer gap when there is only one window */
 static const int showbar            = 1;        /* 0 means no bar */
-static const int topbar             = 1;        /* 0 means bottom bar */
-static const char *fonts[]          = { "JetBrainsMono Nerd Font:size=10","JoyPixels:pixelsize=10:antialias=true:autohint=true", "FontAwesome:size:10" };
-static const char dmenufont[]       = "JetBrainsMono Nerd Font:size=10";
-static char normbgcolor[]           = "#222222";
-static char normbordercolor[]       = "#444444";
-static char normfgcolor[]           = "#bbbbbb";
-static char selfgcolor[]            = "#eeeeee";
-static char selbordercolor[]        = "#005577";
-static char selbgcolor[]            = "#005577";
+static const int topbar             = 0;        /* 0 means bottom bar */
+/*  Display modes of the tab bar: never shown, always shown, shown only in  */
+/*  monocle mode in the presence of several windows.                        */
+/*  Modes after showtab_nmodes are disabled.                                */
+enum showtab_modes { showtab_never, showtab_auto, showtab_nmodes, showtab_always};
+static const int showtab			= showtab_auto;        /* Default tab bar show mode */
+static const int toptab				= True;               /* False means bottom tab bar */
+static const char *fonts[]          = { "Iosevka:size=11","JoyPixels:pixelsize=11:antialias=true:autohint=true", "FontAwesome:size:11" };
+static const char dmenufont[]       = "Iosevka:size=11";
+// DEFAULT COLOR SCHEME
+/* /\* static char normbgcolor[]           = "#222222"; *\/ */
+/* static char normbgcolor[]           = "#121212"; */
+/* static char normbordercolor[]       = "#444444"; */
+/* static char normfgcolor[]           = "#bbbbbb"; */
+/* static char selfgcolor[]            = "#eeeeee"; */
+/* static char selbordercolor[]        = "#005577"; */
+/* /\* static char selbgcolor[]            = "#005577"; *\/ */
+/* static char selbgcolor[]            = "#022938"; */
+// end of default theme
+
+// EVERFOREST
+/* static char normbgcolor[]           = "#222222"; */
+static char normbgcolor[]           = "#1E2326";
+static char normbordercolor[]       = "#1E2326";
+static char normfgcolor[]           = "#A7C080";
+static char selfgcolor[]            = "#D3C6AA";
+static char selbordercolor[]        = "#A7C080";
+/* static char selbgcolor[]            = "#005577"; */
+static char selbgcolor[]            = "#323C41";
+// end of everforest
+
 static char *colors[][3] = {
 	//               fg           bg           border
 	[SchemeNorm] = { normfgcolor, normbgcolor, normbordercolor },
 	[SchemeSel]  = { selfgcolor,  selbgcolor,  selbordercolor  },
+	//[SchemeNorm] = { normfgcolor, normbgcolor, normbordercolor },
+	//[SchemeSel]  = { "#cdcdcb",  "#232323",  selbordercolor  },
 };
 
 typedef struct {
@@ -43,6 +67,11 @@ static Sp scratchpads[] = {
 // tagging
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
 // static const char *tags[] = {"", "", "", "󰈙", "", "", "", "", "", "󱞁" };
+// static const char *tags[] = {"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" };
+static const char ptagf[] = "[%s %s]";	/* format of a tag label */
+static const char etagf[] = "[%s]";	/* format of an empty tag */
+static const int lcaselbl = 0;		/* 1 means make tag label lowercase */
+
 static const Rule rules[] = {
 	// xprop(1):
 	// WM_CLASS(STRING) = instance, class
@@ -102,7 +131,7 @@ static const Layout layouts[] = {
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 // static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbordercolor, "-sf", selfgcolor, NULL };
 static const char *dmenucmd[] = {"dm_run.py", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbordercolor, "-sf", selfgcolor, NULL };
-static const char *termcmd[]  = { "alacritty", NULL };
+static const char *termcmd[]  = { "st", NULL };
 
 static Keychord *keychords[] = {
 	/*-------------------------------------------------------------------------------------------------------------*/
@@ -110,20 +139,21 @@ static Keychord *keychords[] = {
 	/*-------------------------------------------------------------------------------------------------------------*/
 	// APPS
 	&((Keychord){1, { {MODKEY, XK_Return}                   },  spawn,          {.v = termcmd } }),
-	&((Keychord){1, { {MODKEY, XK_b}                        },  spawn,          SHCMD("firefox") }),
-	&((Keychord){1, { {MODKEY, XK_e}                        },  spawn,          SHCMD("nemo") }),
+	// &((Keychord){1, { {MODKEY, XK_b}                        },  spawn,          SHCMD("microsoft-edge-stable") }),
+	&((Keychord){1, { {MODKEY, XK_b}                        },  spawn,          SHCMD("microsoft-edge") }),
+	&((Keychord){1, { {MODKEY, XK_e}                        },  spawn,          SHCMD("thunar") }),
 	&((Keychord){1, { {MODKEY, XK_s}                        },  spawn,          SHCMD("flameshot gui") }),
 
 	// DWM
-	&((Keychord){1, { {MODKEY, XK_x}                        },	spawn,          SHCMD("dm-logout") }),
+	&((Keychord){1, { {MODKEY, XK_x}                        },	spawn,          SHCMD("dm_logout.py") }),
 	&((Keychord){1, { {MODKEY|ShiftMask, XK_b}              },  togglebar,      {0} }),
 	&((Keychord){1, { {MODKEY|ShiftMask, XK_q}              },  quit,           {0} }),
 	&((Keychord){1, { {MODKEY|ControlMask|ShiftMask, XK_q}  },  quit,           {1} }),
 
 	// DMENU AND DMSCRIPTS (Supper + p followed by KEY)
 	&((Keychord){1, { {MODKEY, XK_d}                        },  spawn,          {.v = dmenucmd } }),
-	&((Keychord){2, { {MODKEY, XK_p}, {0, XK_b}             },  spawn,          SHCMD("dm-setbg") }),
-	&((Keychord){2, { {MODKEY, XK_p}, {0, XK_x}             },  spawn,          SHCMD("dm-logout") }),
+	&((Keychord){2, { {MODKEY, XK_p}, {0, XK_b}             },  spawn,          SHCMD("dm_setbg.py") }),
+	&((Keychord){2, { {MODKEY, XK_p}, {0, XK_x}             },  spawn,          SHCMD("dm_logout.py") }),
 	&((Keychord){2, { {MODKEY, XK_p}, {0, XK_h}             },  spawn,          SHCMD("dm-hub") }),
 	&((Keychord){2, { {MODKEY, XK_p}, {0, XK_m}             },  spawn,          SHCMD("dm-man") }),
 	&((Keychord){2, { {MODKEY, XK_p}, {0, XK_o}             },  spawn,          SHCMD("dm-note") }),
@@ -132,6 +162,7 @@ static Keychord *keychords[] = {
 	&((Keychord){2, { {MODKEY, XK_p}, {0, XK_c}             },  spawn,          SHCMD("dm-confedit") }),
 	&((Keychord){2, { {MODKEY, XK_p}, {0, XK_w}             },  spawn,          SHCMD("dm-websearch") }),
 	&((Keychord){2, { {MODKEY, XK_p}, {0, XK_n}             },  spawn,          SHCMD("dm-wifi") }),
+	&((Keychord){2, { {MODKEY, XK_p}, {0, XK_p}             },  spawn,          SHCMD("gpick -s") }),
 
 	// SYSTEM SETTINGS AND CONTROLS
 	&((Keychord){1, { {0, XF86XK_MonBrightnessUp}           },  spawn,          SHCMD("brightnesscontrol.sh i") }),
@@ -194,6 +225,7 @@ static Keychord *keychords[] = {
 	&((Keychord){2, { {MODKEY, XK_l}, {0, XK_0}             },  setlayout,      {.v = &layouts[9]} }),
 	&((Keychord){1, { {MODKEY|ShiftMask, XK_space}          },  togglefloating, {0} }),
 	&((Keychord){1, { {MODKEY, XK_space}                    },  setlayout,      {0} }),
+	&((Keychord){1, { {MODKEY, XK_space}                    },  tabmode,      	{-1} }),
 
 	// GAPS
 	// (Super + g followed by KEY) On the fly gaps change
@@ -249,7 +281,7 @@ static const Button buttons[] = {
 	//    0 - tiled position is relative to mouse cursor
 	//    1 - tiled postiion is relative to window center
 	//    2 - mouse pointer warps to window center
-	
+
 	// The moveorplace uses movemouse or placemouse depending on the floating state
 	// of the selected client. Set up individual keybindings for the two if you want
 	// to control these separately (i.e. to retain the feature to move a tiled window
@@ -261,5 +293,5 @@ static const Button buttons[] = {
 	{ ClkTagBar,            0,              Button3,        toggleview,     {0} },
 	{ ClkTagBar,            MODKEY,         Button1,        tag,            {0} },
 	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      {0} },
+	{ ClkTabBar,            0,              Button1,        focuswin,       {0} },
 };
-
