@@ -18,8 +18,8 @@ static const int topbar             = 0;        /* 0 means bottom bar */
 enum showtab_modes { showtab_never, showtab_auto, showtab_nmodes, showtab_always};
 static const int showtab			= showtab_auto;        /* Default tab bar show mode */
 static const int toptab				= True;               /* False means bottom tab bar */
-static const char *fonts[]          = { "Iosevka:size=11","JoyPixels:pixelsize=11:antialias=true:autohint=true", "FontAwesome:size:11" };
-static const char dmenufont[]       = "Iosevka:size=11";
+static const char *fonts[]          = { "JetBrainsMono Nerd Font:size=10","JoyPixels:pixelsize=11:antialias=true:autohint=true", "FontAwesome:size:11" };
+static const char dmenufont[]       = "JetBrainsMono Nerd Font:size=10";
 // DEFAULT COLOR SCHEME
 /* /\* static char normbgcolor[]           = "#222222"; *\/ */
 /* static char normbgcolor[]           = "#121212"; */
@@ -66,10 +66,11 @@ static Sp scratchpads[] = {
 
 // tagging
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
-// static const char *tags[] = {"", "", "", "󰈙", "", "", "", "", "", "󱞁" };
-// static const char *tags[] = {"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" };
-static const char ptagf[] = "[%s %s]";	/* format of a tag label */
-static const char etagf[] = "[%s]";	/* format of an empty tag */
+/* static const char *tags[] = {"", "", "", "󰈙", "", "", "", "", "", "󱞁" }; */
+/* static const char *tags[] = {"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" }; */
+/* static const char ptagf[] = "[%s %s]";	/\* format of a tag label *\/ */
+static const char ptagf[] = "%s";	/* format of a tag label */
+static const char etagf[] = "~%s";	/* format of an empty tag */
 static const int lcaselbl = 0;		/* 1 means make tag label lowercase */
 
 static const Rule rules[] = {
